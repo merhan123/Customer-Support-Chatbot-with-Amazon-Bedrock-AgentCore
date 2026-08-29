@@ -1,0 +1,28 @@
+[
+  {
+    "name": "create_bug_report",
+    "description": "File a bug ticket only after the customer has provided the bug description, steps to reproduce, and environment. Returns the new ticket ID.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "What is broken, in the customer's own words."
+        },
+        "stepsToReproduce": {
+          "type": "string",
+          "description": "Steps required to reproduce the issue."
+        },
+        "environment": {
+          "type": "string",
+          "description": "Customer browser, operating system, and device."
+        }
+      },
+      "required": [
+        "description",
+        "stepsToReproduce",
+        "environment"
+      ]
+    }
+  }
+]

@@ -1,0 +1,22 @@
+{
+  "name": "MyHarness",
+  "model": {
+    "provider": "bedrock",
+    "modelId": "us.amazon.nova-pro-v1:0"
+  },
+  "tools": [
+    {
+      "type": "agentcore_gateway",
+      "name": "supportgateway",
+      "config": {
+        "agentCoreGateway": {
+          "gatewayArn": "arn:aws:bedrock-agentcore:us-east-1:779603594409:gateway/customersupportchatbot-supportgateway-7djlcoqppx"
+        }
+      }
+    }
+  ],
+  "skills": [],
+  "memory": {
+    "mode": "disabled"
+  }
+}
