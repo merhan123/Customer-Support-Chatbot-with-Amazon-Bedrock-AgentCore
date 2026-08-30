@@ -1,128 +1,140 @@
 # Customer Support Chatbot with Amazon Bedrock AgentCore
 
+This repository contains a cleaned Udacity submission for a customer support chatbot built with the Amazon Bedrock AgentCore CLI and a managed AgentCore harness.
+
 ## Architecture
 
-This project implements a customer support chatbot with three prompt-controlled routes:
+```text
+Customer
+  -> AgentCore Harness (MyHarness)
+  -> System prompt routing
+     -> BUG REPORT -> AgentCore Gateway (supportgateway) -> Lambda (create_bug_report.py) -> DynamoDB
+     -> PLATFORM QUESTION -> FAQ-only answer
+     -> OTHER REQUEST -> Human support phone line
+```
 
-1. **Bug reports** — collect `description`, `stepsToReproduce`, and `environment`, then call `bugreports___create_bug_report` through the AgentCore Gateway and return the generated ticket ID.
-2. **Platform questions** — answer only from the FAQ embedded through the `{{FAQ}}` placeholder.
-3. **Other requests** — politely redirect to human support at `1-800-555-0199 (Mon-Fri)`.
+The deployed model is `us.amazon.nova-pro-v1:0`.
 
-The current project version uses the **Amazon Bedrock AgentCore managed harness**. Classification and routing are therefore implemented inside `system_prompt.txt`, rather than with separate Bedrock Flow classifier/Condition nodes.
+## Three Routes
 
-## Prompt Design
+1. `BUG REPORT`
+   Collect `description`, `stepsToReproduce`, and `environment`. The harness must ask for one missing field at a time and call `create_bug_report` only after all three are present.
+2. `PLATFORM QUESTION`
+   Answer only from `online_shop_faq.md`, which is embedded directly into [`app/MyHarness/system-prompt.md`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/app/MyHarness/system-prompt.md).
+3. `OTHER REQUEST`
+   Politely redirect the customer to `1-800-555-0199 (Mon-Fri)`.
 
-The system prompt:
-- forces exactly one route per customer message;
-- prevents the bug-report tool from being called until all three required fields are available;
-- asks for missing bug information one item at a time;
-- grounds platform answers only in the embedded FAQ;
-- redirects FAQ gaps and out-of-scope requests to human support;
-- includes basic prompt-injection resistance and anti-fabrication rules.
+## Repository Layout
 
-## Automated Tests
+```text
+.
+├── README.md
+├── LICENSE.md
+├── .gitignore
+├── app/
+│   └── MyHarness/
+│       ├── harness.json
+│       └── system-prompt.md
+├── agentcore/
+│   ├── agentcore.json
+│   ├── aws-targets.json
+│   └── cdk/
+├── infrastructure/
+│   ├── cloudformation-tool.yaml
+│   └── cloudformation-testing.yaml
+├── evidence/
+│   └── README.md
+├── bug_report_tools.json
+├── create_bug_report.py
+├── chat_workaround.py
+├── generate-eval-dataset-workaround.py
+├── harness-tests.json
+├── online_shop_faq.md
+├── output_eval_dataset.jsonl
+└── requirements.txt
+```
 
-`harness-tests.json` covers:
-- FAQ questions;
-- incomplete and complete bug reports;
-- unsupported requests;
-- ambiguous inputs;
-- mixed-intent inputs;
-- prompt-injection attempts.
+The older starter-only files and the accidental nested Git repository were removed. The current repository is centered on the declarative AgentCore CLI workflow.
 
-Each automated test is intended to run in a fresh AgentCore session.
+## Current AgentCore CLI Workflow
 
-## Manual Validation Checklist
+For a fresh project, the current CLI flow is:
 
-After the AgentCore Gateway and harness are available:
+```bash
+agentcore create --name customersupportchatbot --model-provider Bedrock
+agentcore add gateway --name supportgateway
+agentcore add gateway-target \
+  --name bugreports \
+  --type lambda-function-arn \
+  --lambda-arn arn:aws:lambda:us-east-1:779603594409:function:bug-report-tool-stack-create-bug-report \
+  --tool-schema-file bug_report_tools.json \
+  --gateway supportgateway
+agentcore add harness --name MyHarness
+agentcore add tool --harness MyHarness --type agentcore_gateway --name supportgateway
+agentcore validate
+agentcore deploy
+agentcore status
+```
 
-1. Run `python3 chat.py`.
-2. Test a multi-turn bug report.
-3. Capture the line:
-   `[tool call] bugreports___create_bug_report`
-4. Confirm the assistant returns the real `ticketId`.
-5. Verify the stored record:
-   `aws dynamodb scan --table-name bug-report-tool-stack-bug-reports --region us-east-1`
-6. Test one FAQ-covered question.
-7. Test one FAQ-uncovered question.
-8. Test one unrelated/other request.
+This repository already contains the equivalent declarative configuration in [`agentcore/agentcore.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/agentcore/agentcore.json) and [`app/MyHarness/harness.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/app/MyHarness/harness.json).
+
+## Deployed Resources
+
+- Harness: `MyHarness`
+- Model: `us.amazon.nova-pro-v1:0`
+- Gateway: `supportgateway`
+- Gateway target: `bugreports`
+- Lambda: `bug-report-tool-stack-create-bug-report`
+- DynamoDB table: `bug-report-tool-stack-bug-reports`
+
+## Runtime Limitation
+
+As of August 30, 2026, `agentcore deploy` has succeeded for this project, but the Udacity/VocLabs role still blocks direct harness invocation. In this lab account, `agentcore invoke` fails with HTTP 403 because the role does not allow `bedrock-agentcore:InvokeHarness`.
+
+That limitation affects runtime verification only. The repository keeps the real deployed configuration and does not claim successful `InvokeHarness` results that were not observed.
+
+## Testing Workaround
+
+Because `InvokeHarness` is denied, local testing uses:
+
+- `chat_workaround.py`
+  Sends prompts to Amazon Bedrock Converse with `us.amazon.nova-pro-v1:0` and invokes the Lambda directly when the model requests `create_bug_report`.
+- `generate-eval-dataset-workaround.py`
+  Runs the prompts in `harness-tests.json` through the same workaround path and writes `output_eval_dataset.jsonl`.
+
+Example commands:
+
+```bash
+python3 chat_workaround.py
+python3 generate-eval-dataset-workaround.py --tests-json harness-tests.json
+```
+
+## Test Assets
+
+- [`harness-tests.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/harness-tests.json)
+  Covers incomplete bug reports, complete bug reports, FAQ-covered questions, FAQ gaps, unsupported requests, ambiguous mixed intent, and prompt injection attempts.
+- [`output_eval_dataset.jsonl`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/output_eval_dataset.jsonl)
+  Was regenerated on August 30, 2026 from the workaround script in this environment and records endpoint connection failures rather than successful model outputs. Regenerate it from an environment with Bedrock access before using it for Bedrock Evaluations.
 
 ## Evaluation
 
-Run:
+Use the generated JSONL with Amazon Bedrock Evaluations only after a real successful run. Record only results that were actually produced.
+
+- Overall correctness score: `TODO after real evaluation run`
+- Notes on routing behavior: `TODO after real evaluation run`
+- Bedrock Evaluations job identifier or screenshot: `TODO after real evaluation run`
+
+## Rubric Mismatch Note
+
+Some older Udacity rubric text still refers to Bedrock Flow classifier nodes and Condition nodes. This repository intentionally uses the current AgentCore harness model instead: the routing logic now lives in one managed harness system prompt instead of a Bedrock Flow graph.
+
+## Final Validation Checklist
 
 ```bash
-python3 generate-eval-dataset.py --tests-json harness-tests.json
+agentcore validate
+python3 -m py_compile chat_workaround.py
+python3 -m py_compile generate-eval-dataset-workaround.py
+python3 -m py_compile create_bug_report.py
 ```
 
-This should create `output_eval_dataset.jsonl`.
-
-Then upload the JSONL file to the evaluation S3 bucket and create a Bedrock Evaluation job using LLM-as-a-judge with the built-in Correctness metric.
-
-## Evaluation Observations
-
-**Fill this section after the real evaluation run.**
-
-Recommended observations to record:
-- overall correctness score;
-- whether all three routes were classified correctly;
-- any bug-report cases that called the tool too early;
-- whether FAQ responses stayed grounded;
-- whether unsupported requests were handed off correctly;
-- any prompt-injection or ambiguous cases that required prompt refinement.
-
-## Evidence
-
-Place real runtime screenshots in the `evidence/` folder:
-
-- `01_bug_chat.png`
-- `02_bug_tool_call.png`
-- `03_dynamodb_ticket.png`
-- `04_faq_covered.png`
-- `05_faq_uncovered.png`
-- `06_other_request.png`
-- `07_evaluation_results.png`
-
-Do not fabricate these screenshots; they should come from the actual AWS run.
-
-## Environment Limitation / AgentCore IAM Blocker
-
-The application design, system prompt, and automated test suite were completed. However, the provided Udacity/VocLabs AWS role does not grant permission to create an Amazon Bedrock AgentCore Gateway.
-
-The failure was reproduced in both the provided `setup_gateway.py` script and the AWS Management Console. AWS returned:
-
-```text
-User: arn:aws:sts::779603594409:assumed-role/voclabs/user5296755=2d0c6edc-44d7-11ea-a45c-f7d5bc8e1851 is not authorized to perform: bedrock-agentcore:CreateGateway on resource: arn:aws:bedrock-agentcore:us-east-1:779603594409:gateway/* because no identity-based policy allows the bedrock-agentcore:CreateGateway action
-```
-
-Because Gateway creation is a prerequisite for `agentcore_config.json`, harness creation, and end-to-end tool invocation, the following runtime artifacts could not be produced in this lab session:
-
-- a live `bugreports___create_bug_report` tool-call transcript;
-- a DynamoDB ticket created through the chatbot/harness;
-- `output_eval_dataset.jsonl` generated from live harness responses;
-- a completed Bedrock Evaluations job/results screenshot.
-
-These artifacts have intentionally **not** been fabricated. The included `system_prompt.txt` and `harness-tests.json` are ready to run once the lab role is granted `bedrock-agentcore:CreateGateway` and the other AgentCore permissions required by the supplied project scripts.
-
-### Reproduction
-
-```bash
-python3 setup_gateway.py
-```
-
-Result: `AccessDeniedException` for `bedrock-agentcore:CreateGateway`.
-
-The same authorization failure occurs when attempting to create the Gateway manually in the AWS Console.
-
-### Required resolution
-
-The Udacity/VocLabs lab role must be updated by the environment administrator to allow the AgentCore Gateway operations required by the project. After that, the intended completion sequence is:
-
-```bash
-python3 setup_gateway.py
-python3 create_harness.py
-python3 chat.py
-python3 generate-eval-dataset.py --tests-json harness-tests.json
-```
-
-The resulting DynamoDB ticket, JSONL evaluation dataset, and Bedrock Evaluation results can then be added as final runtime evidence.
+If IAM still blocks live invocation, document that limitation rather than claiming the tests passed.

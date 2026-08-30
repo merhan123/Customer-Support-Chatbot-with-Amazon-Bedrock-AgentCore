@@ -1,24 +1,26 @@
-
 # Python
 __pycache__/
 *.pyc
 .venv/
 venv/
 
-# macOS
-.DS_Store
-
-# AWS / local credentials
-.aws/
+# Environment and credentials
 .env
 .env.*
+.aws/
 agentcore_config.json
+agentcore/.env.local
 
-# AgentCore local state/logs
+# AgentCore local state
 agentcore/.cli/
 
-# CDK generated files
-cdk.out/
+# Node / CDK build output
+**/node_modules/
+**/cdk.out/
+**/dist/
 
-# Evaluation output/results
+# Logs
 *.log
+
+# OS files
+.DS_Store
