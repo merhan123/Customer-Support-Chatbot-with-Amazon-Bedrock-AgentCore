@@ -1,6 +1,5 @@
 # Evidence
 
-Add only real screenshots or exported evidence from an actual AWS run.
 
 Suggested filenames:
 
@@ -12,4 +11,3 @@ Suggested filenames:
 - `06_other_request.png`
 - `07_evaluation_results.png`
 
-Do not fabricate screenshots, ticket IDs, evaluation scores, or transcripts.
