@@ -26,18 +26,20 @@ def _normalize_payload(event):
         return None
 
     if "parameters" in event and "messageVersion" in event:
-        params = event.get("parameters") or []
+        params = event.get("parameters")
+        if not isinstance(params, list):
+            return None
         return {
             param.get("name"): param.get("value")
             for param in params
-            if isinstance(param, dict) and param.get("name")
+            if isinstance(param, dict) and isinstance(param.get("name"), str)
         }
 
     return event
 
 
 def _clean_payload(payload):
-    return {field: str(payload.get(field) or "").strip() for field in REQUIRED_FIELDS}
+    return {field: payload[field].strip() if isinstance(payload.get(field), str) else "" for field in REQUIRED_FIELDS}
 
 
 def lambda_handler(event, context):
@@ -51,7 +53,7 @@ def lambda_handler(event, context):
         LOGGER.warning("Unexpected event type: %s", type(event).__name__)
         return {"error": "unexpected event shape"}
 
-    LOGGER.info("Received create_bug_report request with keys: %s", sorted(payload.keys()))
+    LOGGER.info("Received create_bug_report request with keys: %s", sorted(str(key) for key in payload))
     body = _clean_payload(payload)
 
     missing = [field for field, value in body.items() if not value]

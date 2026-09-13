@@ -10,7 +10,7 @@ import boto3
 
 REGION_DEFAULT = "us-east-1"
 MODEL_ID_DEFAULT = "us.amazon.nova-pro-v1:0"
-SYSTEM_PROMPT_PATH_DEFAULT = "app/MyHarness/system-prompt.md"
+SYSTEM_PROMPT_PATH_DEFAULT = str(Path(__file__).resolve().parent / "app/MyHarness/system-prompt.md")
 LAMBDA_FUNCTION_DEFAULT = "bug-report-tool-stack-create-bug-report"
 
 TOOL_CONFIG = {
@@ -274,5 +274,8 @@ def main():
     )
 
 
+    return 0 if n_ok == len(tests) else 1
+
+
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -20,7 +20,7 @@ The deployed model is `us.amazon.nova-pro-v1:0`.
 1. `BUG REPORT`
    Collect `description`, `stepsToReproduce`, and `environment`. The harness must ask for one missing field at a time and call `create_bug_report` only after all three are present.
 2. `PLATFORM QUESTION`
-   Answer only from `online_shop_faq.md`, which is embedded directly into [`app/MyHarness/system-prompt.md`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/app/MyHarness/system-prompt.md).
+   Answer only from `online_shop_faq.md`, which is embedded directly into [`app/MyHarness/system-prompt.md`](app/MyHarness/system-prompt.md).
 3. `OTHER REQUEST`
    Politely redirect the customer to `1-800-555-0199 (Mon-Fri)`.
 
@@ -76,7 +76,7 @@ agentcore deploy
 agentcore status
 ```
 
-This repository already contains the equivalent declarative configuration in [`agentcore/agentcore.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/agentcore/agentcore.json) and [`app/MyHarness/harness.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/app/MyHarness/harness.json).
+This repository already contains the equivalent declarative configuration in [`agentcore/agentcore.json`](agentcore/agentcore.json) and [`app/MyHarness/harness.json`](app/MyHarness/harness.json).
 
 ## Deployed Resources
 
@@ -111,9 +111,9 @@ python3 generate-eval-dataset-workaround.py --tests-json harness-tests.json
 
 ## Test Assets
 
-- [`harness-tests.json`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/harness-tests.json)
+- [`harness-tests.json`](harness-tests.json)
   Covers incomplete bug reports, complete bug reports, FAQ-covered questions, FAQ gaps, unsupported requests, ambiguous mixed intent, and prompt injection attempts.
-- [`output_eval_dataset.jsonl`](/Users/merhanadel/Desktop/Nano degree/customer-support-chatbot-submission/output_eval_dataset.jsonl)
+- [`output_eval_dataset.jsonl`](output_eval_dataset.jsonl)
   Was regenerated on August 30, 2026 from the workaround script in this environment and records endpoint connection failures rather than successful model outputs. Regenerate it from an environment with Bedrock access before using it for Bedrock Evaluations.
 
 ## Evaluation
