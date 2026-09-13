@@ -20,7 +20,7 @@ import boto3
 REGION = "us-east-1"
 MODEL_ID = "us.amazon.nova-pro-v1:0"
 LAMBDA_FUNCTION = "bug-report-tool-stack-create-bug-report"
-SYSTEM_PROMPT_PATH = Path("app/MyHarness/system-prompt.md")
+SYSTEM_PROMPT_PATH = Path(__file__).resolve().parent / "app/MyHarness/system-prompt.md"
 
 TOOL_CONFIG = {
     "tools": [
@@ -97,6 +97,8 @@ def looks_like_real_value(value: object) -> bool:
 
 
 def validate_bug_args(args: dict):
+    if not isinstance(args, dict):
+        return False, "Tool arguments must be an object"
     required = ["description", "stepsToReproduce", "environment"]
     missing_or_invalid = [
         key for key in required if not looks_like_real_value(args.get(key))
