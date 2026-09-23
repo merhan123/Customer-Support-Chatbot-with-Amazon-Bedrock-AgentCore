@@ -111,6 +111,11 @@ python3 generate-eval-dataset-workaround.py --tests-json harness-tests.json
 
 ## Test Assets
 
+Both local chat and evaluation validate bug-report tool arguments before invoking
+Lambda, rejecting placeholder values and malformed payloads. Run the offline
+regression suite with `python3 -m unittest discover -s tests -v`; no AWS credentials
+or network calls are required by these tests.
+
 - [`harness-tests.json`](harness-tests.json)
   Covers incomplete bug reports, complete bug reports, FAQ-covered questions, FAQ gaps, unsupported requests, ambiguous mixed intent, and prompt injection attempts.
 - [`output_eval_dataset.jsonl`](output_eval_dataset.jsonl)
