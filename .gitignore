@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Environment and credentials
+.env
+.env.*
+.aws/
+agentcore_config.json
+agentcore/.env.local
+
+# AgentCore local state
+agentcore/.cli/
+
+# Node / CDK build output
+**/node_modules/
+**/cdk.out/
+**/dist/
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+
+# Generated context and evaluation artifacts
+agentcore/.llm-context/
+evidence/
+output_eval_dataset.jsonl
