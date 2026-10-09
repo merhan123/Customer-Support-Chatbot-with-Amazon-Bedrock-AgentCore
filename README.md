@@ -125,3 +125,9 @@ python3 -m py_compile create_bug_report.py
 ```
 
 Full runtime verification requires permission to invoke the deployed harness.
+
+## Offline unit tests
+
+Run `python3 -m unittest discover -s tests -v` from the repository root.
+The tests mock AWS and check Lambda input handling and evaluation-tool validation.
+They do not create tickets or invoke Bedrock. Live integration needs configured AWS access.
