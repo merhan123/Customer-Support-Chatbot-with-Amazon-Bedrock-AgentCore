@@ -8,6 +8,8 @@ from typing import Any, Dict, List
 
 import boto3
 
+from chat_workaround import validate_bug_args
+
 REGION_DEFAULT = "us-east-1"
 MODEL_ID_DEFAULT = "us.amazon.nova-pro-v1:0"
 SYSTEM_PROMPT_PATH_DEFAULT = str(Path(__file__).resolve().parent / "app/MyHarness/system-prompt.md")
@@ -72,6 +74,10 @@ def visible_text(message: Dict[str, Any]) -> str:
 
 def invoke_lambda(lambda_client, function_name: str, args: Dict[str, Any]) -> Dict[str, Any]:
     """Invoke the existing bug-report Lambda directly."""
+    valid, error = validate_bug_args(args)
+    if not valid:
+        return {"error": error}
+
     response = lambda_client.invoke(
         FunctionName=function_name,
         InvocationType="RequestResponse",
